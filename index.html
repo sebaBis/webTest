@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Firebase Web Test</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        gap: 10px;
+      }
+      button {
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
+        width: 200px;
+      }
+      #status {
+        margin-top: 20px;
+        color: green;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Invia Stringhe a Firebase</h1>
+
+    <h3>Firestore Database</h3>
+    <button id="btn1">Invia "Alfa"</button>
+    <button id="btn2">Invia "Beta"</button>
+    <button id="btn3">Invia "Gamma"</button>
+    <button id="btn4">Invia "Delta"</button>
+
+    <h3>Realtime Database</h3>
+    <button id="rtdb1">Realtime "Uno"</button>
+    <button id="rtdb2">Realtime "Due"</button>
+    <button id="rtdb3">Realtime "Tre"</button>
+
+    <div id="status"></div>
+
+    <script type="module">
+      // Importa le funzioni necessarie dall'SDK di Firebase (v10+)
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+      import {
+        getFirestore,
+        collection,
+        addDoc,
+        serverTimestamp,
+      } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+      import {
+        getDatabase,
+        ref,
+        push,
+        set,
+        serverTimestamp as rtdbTimestamp,
+      } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyB9cCJW834afmKTw9iMEl76EOiBPQ4fWs0",
+        authDomain: "icasaserver.firebaseapp.com",
+        databaseURL: "https://icasaserver-default-rtdb.firebaseio.com",
+        projectId: "icasaserver",
+        storageBucket: "icasaserver.firebasestorage.app",
+        messagingSenderId: "317812359830",
+        appId: "1:317812359830:web:00f46b3b10ea4fa2fcb8b7",
+        measurementId: "G-NVTNVC2GRP",
+      };
+
+      // Inizializza Firebase
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+      const rtdb = getDatabase(app);
+
+      const statusDiv = document.getElementById("status");
+
+      // Funzione per salvare i dati nel database
+      async function salvaStringa(valore) {
+        statusDiv.textContent = "Invio in corso...";
+        try {
+          // Aggiunge un nuovo documento alla collezione "messaggi"
+          const docRef = await addDoc(collection(db, "messaggi"), {
+            testo: valore,
+            data_invio: serverTimestamp(),
+          });
+          statusDiv.textContent = `Successo! ID: ${docRef.id}`;
+          console.log("Documento scritto con ID: ", docRef.id);
+        } catch (e) {
+          statusDiv.textContent = "Errore durante l'invio.";
+          console.error("Errore: ", e);
+        }
+      }
+
+      // Funzione per salvare i dati nel Realtime Database
+      async function salvaSuRealtime(valore) {
+        statusDiv.textContent = "Invio a Realtime DB...";
+        try {
+          // Crea un nuovo riferimento con ID univoco (simile a addDoc)
+          const messaggiRef = ref(rtdb, "messaggi_realtime");
+          const nuovoMessaggioRef = push(messaggiRef);
+
+          await set(nuovoMessaggioRef, {
+            testo: valore,
+            timestamp: rtdbTimestamp(),
+          });
+          statusDiv.textContent = `Realtime OK! ID: ${nuovoMessaggioRef.key}`;
+        } catch (e) {
+          statusDiv.textContent = "Errore Realtime DB.";
+          console.error("Errore Realtime: ", e);
+        }
+      }
+
+      // Associa gli eventi ai pulsanti
+      document
+        .getElementById("btn1")
+        .addEventListener("click", () => salvaStringa("Alfa"));
+      document
+        .getElementById("btn2")
+        .addEventListener("click", () => salvaStringa("Beta"));
+      document
+        .getElementById("btn3")
+        .addEventListener("click", () => salvaStringa("Gamma"));
+      document
+        .getElementById("btn4")
+        .addEventListener("click", () => salvaStringa("Delta"));
+
+      document
+        .getElementById("rtdb1")
+        .addEventListener("click", () => salvaSuRealtime("Uno"));
+      document
+        .getElementById("rtdb2")
+        .addEventListener("click", () => salvaSuRealtime("Due"));
+      document
+        .getElementById("rtdb3")
+        .addEventListener("click", () => salvaSuRealtime("Tre"));
+    </script>
+  </body>
+</html>
