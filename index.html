@@ -36,26 +36,101 @@
         margin-top: 20px;
         color: green;
       }
+      #authArea {
+        margin-bottom: 30px;
+        padding: 15px;
+        border: 2px solid #333;
+        border-radius: 8px;
+        background-color: #f5f5f5;
+        min-width: 350px;
+      }
+      #userDisplay {
+        margin-bottom: 10px;
+        font-size: 16px;
+        font-weight: bold;
+      }
+      .auth-input {
+        width: 100%;
+        padding: 8px;
+        margin-bottom: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+      #authButtons {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      #authButtons button {
+        flex: 1;
+        min-width: 120px;
+        padding: 10px;
+        font-size: 14px;
+      }
+      #logoutBtn {
+        display: none;
+      }
+      #registerBtn {
+        background-color: #4caf50;
+        color: white;
+      }
+      #loginBtn {
+        background-color: #2196f3;
+        color: white;
+      }
+      #controlsArea {
+        display: none;
+      }
+      #controlsArea.authenticated {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+      }
     </style>
   </head>
   <body>
     <h1>iCasa</h1>
 
-    <!--h3>Firestore Database</h3>
-    <button id="btn1">Invia "Alfa"</button-->
+    <div id="authArea">
+      <div id="userDisplay">Non autenticato</div>
+      <input
+        type="email"
+        id="emailInput"
+        class="auth-input"
+        placeholder="Email"
+      />
+      <input
+        type="password"
+        id="passwordInput"
+        class="auth-input"
+        placeholder="Password"
+      />
+      <div id="authButtons">
+        <button id="registerBtn">Registrati</button>
+        <button id="loginBtn">Accedi</button>
+        <button id="logoutBtn">Logout</button>
+      </div>
+    </div>
 
-    <button id="rtdbA">
-      <span class="material-icons">door_front</span> Portina (A)
-    </button>
-    <button id="rtdbC">
-      <span class="material-icons">fence</span> Cancello (C)
-    </button>
-    <button id="rtdbG">
-      <span class="material-icons">garage</span> Garage (G)
-    </button>
-    <button id="rtdbL">
-      <span class="material-icons">lightbulb</span> Luci (L)
-    </button>
+    <div id="controlsArea">
+      <!--h3>Firestore Database</h3>
+      <button id="btn1">Invia "Alfa"</button-->
+
+      <button id="rtdbA">
+        <span class="material-icons">door_front</span> Portina (A)
+      </button>
+      <button id="rtdbC">
+        <span class="material-icons">fence</span> Cancello (C)
+      </button>
+      <button id="rtdbG">
+        <span class="material-icons">garage</span> Garage (G)
+      </button>
+      <button id="rtdbL">
+        <span class="material-icons">lightbulb</span> Luci (L)
+      </button>
+    </div>
 
     <div id="status"></div>
 
@@ -75,6 +150,13 @@
         set,
         serverTimestamp as rtdbTimestamp,
       } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+      import {
+        getAuth,
+        signInWithEmailAndPassword,
+        createUserWithEmailAndPassword,
+        signOut,
+        onAuthStateChanged,
+      } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
       const firebaseConfig = {
         apiKey: "AIzaSyB9cCJW834afmKTw9iMEl76EOiBPQ4fWs0",
@@ -91,8 +173,102 @@
       const app = initializeApp(firebaseConfig);
       //const db = getFirestore(app);
       const rtdb = getDatabase(app);
+      const auth = getAuth(app);
 
       const statusDiv = document.getElementById("status");
+      const userDisplay = document.getElementById("userDisplay");
+      const controlsArea = document.getElementById("controlsArea");
+      const emailInput = document.getElementById("emailInput");
+      const passwordInput = document.getElementById("passwordInput");
+      const registerBtn = document.getElementById("registerBtn");
+      const loginBtn = document.getElementById("loginBtn");
+      const logoutBtn = document.getElementById("logoutBtn");
+
+      // Monitora lo stato di autenticazione
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          userDisplay.textContent = `Autenticato: ${user.email || user.uid.substring(0, 8) + "..."}`;
+          emailInput.style.display = "none";
+          passwordInput.style.display = "none";
+          registerBtn.style.display = "none";
+          loginBtn.style.display = "none";
+          logoutBtn.style.display = "inline-block";
+          controlsArea.classList.add("authenticated");
+          console.log("Utente autenticato:", user.email || user.uid);
+        } else {
+          userDisplay.textContent = "Non autenticato";
+          emailInput.style.display = "block";
+          passwordInput.style.display = "block";
+          registerBtn.style.display = "inline-block";
+          loginBtn.style.display = "inline-block";
+          logoutBtn.style.display = "none";
+          controlsArea.classList.remove("authenticated");
+          statusDiv.textContent = "";
+          console.log("Utente non autenticato");
+        }
+      });
+
+      // Gestore della registrazione
+      registerBtn.addEventListener("click", async () => {
+        const email = emailInput.value.trim();
+        const password = passwordInput.value.trim();
+
+        if (!email || !password) {
+          statusDiv.textContent = "Inserisci email e password.";
+          return;
+        }
+
+        if (password.length < 6) {
+          statusDiv.textContent =
+            "La password deve essere di almeno 6 caratteri.";
+          return;
+        }
+
+        try {
+          statusDiv.textContent = "Registrazione in corso...";
+          await createUserWithEmailAndPassword(auth, email, password);
+          statusDiv.textContent = "Registrazione completata!";
+          emailInput.value = "";
+          passwordInput.value = "";
+        } catch (error) {
+          statusDiv.textContent = "Errore registrazione: " + error.message;
+          console.error("Errore registrazione:", error);
+        }
+      });
+
+      // Gestore del login
+      loginBtn.addEventListener("click", async () => {
+        const email = emailInput.value.trim();
+        const password = passwordInput.value.trim();
+
+        if (!email || !password) {
+          statusDiv.textContent = "Inserisci email e password.";
+          return;
+        }
+
+        try {
+          statusDiv.textContent = "Accesso in corso...";
+          await signInWithEmailAndPassword(auth, email, password);
+          statusDiv.textContent = "Accesso effettuato!";
+          emailInput.value = "";
+          passwordInput.value = "";
+        } catch (error) {
+          statusDiv.textContent = "Errore accesso: " + error.message;
+          console.error("Errore login:", error);
+        }
+      });
+
+      // Gestore del logout
+      logoutBtn.addEventListener("click", async () => {
+        try {
+          statusDiv.textContent = "Disconnessione...";
+          await signOut(auth);
+          statusDiv.textContent = "Disconnesso.";
+        } catch (error) {
+          statusDiv.textContent = "Errore: " + error.message;
+          console.error("Errore logout:", error);
+        }
+      });
 
       // Genera un ID client univoco in formato esadecimale
       function createClientId() {
@@ -134,6 +310,10 @@
 
       // Funzione per salvare i dati nel Realtime Database
       async function salvaSuRealtime(valore) {
+        if (!auth.currentUser) {
+          statusDiv.textContent = "Errore: devi autenticarti prima.";
+          return;
+        }
         statusDiv.textContent = "Invio a Realtime DB...";
         try {
           // Crea un nuovo riferimento con ID univoco (simile a addDoc)
@@ -142,7 +322,8 @@
 
           await set(nuovoMessaggioRef, {
             testo2: valore,
-            id: getClientId(),
+            userId: auth.currentUser.uid,
+            clientId: getClientId(),
             timestamp: rtdbTimestamp(),
           });
           statusDiv.textContent = `Realtime OK! ID: ${nuovoMessaggioRef.key}`;
