@@ -3,7 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Firebase Web Test</title>
+    <title>iCasa2 Test</title>
+    <!-- Importa Google Material Icons -->
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
     <style>
       body {
         font-family: sans-serif;
@@ -15,10 +20,17 @@
         gap: 10px;
       }
       button {
-        padding: 10px 20px;
-        font-size: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        padding: 15px 30px; /* Aumentato il padding */
+        font-size: 20px; /* Aumentato la dimensione del font */
         cursor: pointer;
-        width: 200px;
+        width: 300px; /* Aumentata la larghezza per accogliere icone e testo */
+      }
+      button .material-icons {
+        font-size: 40px; /* Icone decisamente più grandi */
       }
       #status {
         margin-top: 20px;
@@ -27,18 +39,23 @@
     </style>
   </head>
   <body>
-    <h1>Invia Stringhe a Firebase</h1>
+    <h1>iCasa</h1>
 
-    <h3>Firestore Database</h3>
-    <button id="btn1">Invia "Alfa"</button>
-    <button id="btn2">Invia "Beta"</button>
-    <button id="btn3">Invia "Gamma"</button>
-    <button id="btn4">Invia "Delta"</button>
+    <!--h3>Firestore Database</h3>
+    <button id="btn1">Invia "Alfa"</button-->
 
-    <h3>Realtime Database</h3>
-    <button id="rtdb1">Realtime "Uno"</button>
-    <button id="rtdb2">Realtime "Due"</button>
-    <button id="rtdb3">Realtime "Tre"</button>
+    <button id="rtdbA">
+      <span class="material-icons">door_front</span> Portina (A)
+    </button>
+    <button id="rtdbC">
+      <span class="material-icons">fence</span> Cancello (C)
+    </button>
+    <button id="rtdbG">
+      <span class="material-icons">garage</span> Garage (G)
+    </button>
+    <button id="rtdbL">
+      <span class="material-icons">lightbulb</span> Luci (L)
+    </button>
 
     <div id="status"></div>
 
@@ -72,27 +89,48 @@
 
       // Inizializza Firebase
       const app = initializeApp(firebaseConfig);
-      const db = getFirestore(app);
+      //const db = getFirestore(app);
       const rtdb = getDatabase(app);
 
       const statusDiv = document.getElementById("status");
 
-      // Funzione per salvare i dati nel database
-      async function salvaStringa(valore) {
-        statusDiv.textContent = "Invio in corso...";
-        try {
-          // Aggiunge un nuovo documento alla collezione "messaggi"
-          const docRef = await addDoc(collection(db, "messaggi"), {
-            testo: valore,
-            data_invio: serverTimestamp(),
-          });
-          statusDiv.textContent = `Successo! ID: ${docRef.id}`;
-          console.log("Documento scritto con ID: ", docRef.id);
-        } catch (e) {
-          statusDiv.textContent = "Errore durante l'invio.";
-          console.error("Errore: ", e);
-        }
+      // Genera un ID client univoco in formato esadecimale
+      function createClientId() {
+        const array = new Uint8Array(16);
+        crypto.getRandomValues(array);
+        return Array.from(array, (byte) =>
+          byte.toString(16).padStart(2, "0"),
+        ).join("");
       }
+
+      function getClientId() {
+        let clientId = localStorage.getItem("clientId");
+        if (!clientId) {
+          clientId = createClientId();
+          localStorage.setItem("clientId", clientId);
+        }
+        return clientId;
+      }
+
+      const clientId = getClientId();
+      console.log("Client ID:", clientId);
+
+      // Funzione per salvare i dati nel database
+      //   async function salvaStringa(valore) {
+      //     statusDiv.textContent = "Invio in corso...";
+      //     try {
+      //       // Aggiunge un nuovo documento alla collezione "messaggi"
+      //       const docRef = await addDoc(collection(db, "messaggi"), {
+      //         testo: valore,
+      //         data_invio: serverTimestamp(),
+      //       });
+      //       statusDiv.textContent = `Successo! ID: ${docRef.id}`;
+      //       console.log("Documento scritto con ID: ", docRef.id);
+      //     } catch (e) {
+      //       statusDiv.textContent = "Errore durante l'invio.";
+      //       console.error("Errore: ", e);
+      //     }
+      //   }
 
       // Funzione per salvare i dati nel Realtime Database
       async function salvaSuRealtime(valore) {
@@ -103,7 +141,8 @@
           const nuovoMessaggioRef = push(messaggiRef);
 
           await set(nuovoMessaggioRef, {
-            testo: valore,
+            testo2: valore,
+            id: getClientId(),
             timestamp: rtdbTimestamp(),
           });
           statusDiv.textContent = `Realtime OK! ID: ${nuovoMessaggioRef.key}`;
@@ -115,27 +154,17 @@
 
       // Associa gli eventi ai pulsanti
       document
-        .getElementById("btn1")
-        .addEventListener("click", () => salvaStringa("Alfa"));
+        .getElementById("rtdbA")
+        .addEventListener("click", () => salvaSuRealtime("A"));
       document
-        .getElementById("btn2")
-        .addEventListener("click", () => salvaStringa("Beta"));
+        .getElementById("rtdbC")
+        .addEventListener("click", () => salvaSuRealtime("C"));
       document
-        .getElementById("btn3")
-        .addEventListener("click", () => salvaStringa("Gamma"));
+        .getElementById("rtdbG")
+        .addEventListener("click", () => salvaSuRealtime("G"));
       document
-        .getElementById("btn4")
-        .addEventListener("click", () => salvaStringa("Delta"));
-
-      document
-        .getElementById("rtdb1")
-        .addEventListener("click", () => salvaSuRealtime("Uno"));
-      document
-        .getElementById("rtdb2")
-        .addEventListener("click", () => salvaSuRealtime("Due"));
-      document
-        .getElementById("rtdb3")
-        .addEventListener("click", () => salvaSuRealtime("Tre"));
+        .getElementById("rtdbL")
+        .addEventListener("click", () => salvaSuRealtime("L"));
     </script>
   </body>
 </html>
