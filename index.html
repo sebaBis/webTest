@@ -71,10 +71,6 @@
       #logoutBtn {
         display: none;
       }
-      #registerBtn {
-        background-color: #4caf50;
-        color: white;
-      }
       #loginBtn {
         background-color: #2196f3;
         color: white;
@@ -108,7 +104,6 @@
         placeholder="Password"
       />
       <div id="authButtons">
-        <button id="registerBtn">Registrati</button>
         <button id="loginBtn">Accedi</button>
         <button id="logoutBtn">Logout</button>
       </div>
@@ -180,7 +175,6 @@
       const controlsArea = document.getElementById("controlsArea");
       const emailInput = document.getElementById("emailInput");
       const passwordInput = document.getElementById("passwordInput");
-      const registerBtn = document.getElementById("registerBtn");
       const loginBtn = document.getElementById("loginBtn");
       const logoutBtn = document.getElementById("logoutBtn");
 
@@ -190,7 +184,6 @@
           userDisplay.textContent = `Autenticato: ${user.email || user.uid.substring(0, 8) + "..."}`;
           emailInput.style.display = "none";
           passwordInput.style.display = "none";
-          registerBtn.style.display = "none";
           loginBtn.style.display = "none";
           logoutBtn.style.display = "inline-block";
           controlsArea.classList.add("authenticated");
@@ -199,40 +192,11 @@
           userDisplay.textContent = "Non autenticato";
           emailInput.style.display = "block";
           passwordInput.style.display = "block";
-          registerBtn.style.display = "inline-block";
           loginBtn.style.display = "inline-block";
           logoutBtn.style.display = "none";
           controlsArea.classList.remove("authenticated");
           statusDiv.textContent = "";
           console.log("Utente non autenticato");
-        }
-      });
-
-      // Gestore della registrazione
-      registerBtn.addEventListener("click", async () => {
-        const email = emailInput.value.trim();
-        const password = passwordInput.value.trim();
-
-        if (!email || !password) {
-          statusDiv.textContent = "Inserisci email e password.";
-          return;
-        }
-
-        if (password.length < 6) {
-          statusDiv.textContent =
-            "La password deve essere di almeno 6 caratteri.";
-          return;
-        }
-
-        try {
-          statusDiv.textContent = "Registrazione in corso...";
-          await createUserWithEmailAndPassword(auth, email, password);
-          statusDiv.textContent = "Registrazione completata!";
-          emailInput.value = "";
-          passwordInput.value = "";
-        } catch (error) {
-          statusDiv.textContent = "Errore registrazione: " + error.message;
-          console.error("Errore registrazione:", error);
         }
       });
 
