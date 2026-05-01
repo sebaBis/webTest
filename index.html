@@ -84,6 +84,21 @@
         align-items: center;
         gap: 10px;
       }
+      .button-row {
+        display: flex;
+        gap: 10px;
+        width: 300px;
+      }
+      .button-row button {
+        flex: 1;
+        width: auto;
+        padding: 8px;
+        font-size: 14px;
+        gap: 8px;
+      }
+      .button-row button .material-icons {
+        font-size: 24px;
+      }
     </style>
   </head>
   <body>
@@ -122,9 +137,14 @@
       <button id="rtdbG">
         <span class="material-icons">garage</span> Garage (G)
       </button>
-      <button id="rtdbL">
-        <span class="material-icons">lightbulb</span> Luci (L)
-      </button>
+      <div class="button-row">
+        <button id="rtdbL_ON">
+          <span class="material-icons">lightbulb</span> LED ON (L)
+        </button>
+        <button id="rtdbL_OFF">
+          <span class="material-icons">lightbulb_outline</span> LED OFF
+        </button>
+      </div>
     </div>
 
     <div id="status"></div>
@@ -281,11 +301,11 @@
         statusDiv.textContent = "Invio a Realtime DB...";
         try {
           // Crea un nuovo riferimento con ID univoco (simile a addDoc)
-          const messaggiRef = ref(rtdb, "messaggi_realtime");
+          const messaggiRef = ref(rtdb, "iCasa");
           const nuovoMessaggioRef = push(messaggiRef);
 
           await set(nuovoMessaggioRef, {
-            testo2: valore,
+            cmd: valore,
             userId: auth.currentUser.uid,
             clientId: getClientId(),
             timestamp: rtdbTimestamp(),
@@ -308,8 +328,11 @@
         .getElementById("rtdbG")
         .addEventListener("click", () => salvaSuRealtime("G"));
       document
-        .getElementById("rtdbL")
+        .getElementById("rtdbL_ON")
         .addEventListener("click", () => salvaSuRealtime("L"));
+      document
+        .getElementById("rtdbL_OFF")
+        .addEventListener("click", () => salvaSuRealtime("L1s"));
     </script>
   </body>
 </html>
