@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>iCasa2 Test</title>
+    <title>iCasa2</title>
     <!-- Importa Google Material Icons -->
     <link
       href="https://fonts.googleapis.com/icon?family=Material+Icons"
@@ -33,7 +33,23 @@
         font-size: 40px; /* Icone decisamente più grandi */
       }
       #status {
-        margin-top: 20px;
+        margin-top: 5px;
+        color: green;
+      }
+      #statusCmd {
+        margin-top: 1px;
+        color: blue;
+      }
+      #statusArduino1 {
+        margin-top: 1px;
+        color: orange;
+      }
+      #statusArduino2 {
+        margin-top: 1px;
+        color: orange;
+      }
+      #statusIO {
+        margin-top: 1px;
         color: green;
       }
       #authArea {
@@ -102,7 +118,7 @@
     </style>
   </head>
   <body>
-    <h1>iCasa</h1>
+    <h1>iCasa2</h1>
 
     <div id="authArea">
       <div id="userDisplay">Non autenticato</div>
@@ -136,6 +152,7 @@
       </button>
       <button id="rtdbG">
         <span class="material-icons">garage</span> Garage (G)
+        <span id="garageStatusIcon" class="material-icons">question_mark</span>
       </button>
       <div class="button-row">
         <button id="rtdbL_ON">
@@ -148,6 +165,10 @@
     </div>
 
     <div id="status"></div>
+    <div id="statusCmd"></div>
+    <div id="statusArduino1"></div>
+    <div id="statusArduino2"></div>
+    <div id="statusIO"></div>
 
     <script type="module">
       // Importa le funzioni necessarie dall'SDK di Firebase (v10+)
@@ -163,6 +184,9 @@
         ref,
         push,
         set,
+        onValue,
+        query,
+        limitToLast,
         serverTimestamp as rtdbTimestamp,
       } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
       import {
@@ -191,12 +215,85 @@
       const auth = getAuth(app);
 
       const statusDiv = document.getElementById("status");
+      const statusCmdDiv = document.getElementById("statusCmd");
+      const statusArduino1Div = document.getElementById("statusArduino1");
+      const statusArduino2Div = document.getElementById("statusArduino2");
+      const statusIODiv = document.getElementById("statusIO");
       const userDisplay = document.getElementById("userDisplay");
       const controlsArea = document.getElementById("controlsArea");
       const emailInput = document.getElementById("emailInput");
       const passwordInput = document.getElementById("passwordInput");
       const loginBtn = document.getElementById("loginBtn");
       const logoutBtn = document.getElementById("logoutBtn");
+      const garageStatusIcon = document.getElementById("garageStatusIcon");
+
+      // Event listener for Realtime Database changes
+      const lastRecordsQuery = query(ref(rtdb, "iCasa"), limitToLast(1));
+      onValue(lastRecordsQuery, (snapshot) => {
+        const records = [];
+        snapshot.forEach((childSnapshot) => {
+          const val = childSnapshot.val();
+          records.push(val);
+        });
+        statusCmdDiv.textContent =
+          records.length > 0
+            ? records[0].cmd +
+              " - " +
+              (records[0].timestamp
+                ? new Date(records[0].timestamp).toLocaleString("it-IT")
+                : "N/A")
+            : "";
+      });
+
+      const arduinoStatusQuery = query(
+        ref(rtdb, "iCasaArduino"),
+        limitToLast(2),
+      );
+      onValue(arduinoStatusQuery, (snapshot) => {
+        const records = [];
+        snapshot.forEach((childSnapshot) => {
+          const val = childSnapshot.val();
+          records.push(val);
+        });
+        statusArduino1Div.textContent =
+          records.length > 0
+            ? records[0].cmd +
+              " - " +
+              (records[0].timestamp
+                ? new Date(records[0].timestamp).toLocaleString("it-IT")
+                : "N/A")
+            : "";
+        statusArduino2Div.textContent =
+          records.length > 1
+            ? records[1].cmd +
+              " - " +
+              (records[1].timestamp
+                ? new Date(records[1].timestamp).toLocaleString("it-IT")
+                : "N/A")
+            : "";
+      });
+
+      // Monitoraggio input (stato garage)
+      const inputsQuery = query(ref(rtdb, "iCasaIO"), limitToLast(1));
+      onValue(inputsQuery, (snapshot) => {
+        snapshot.forEach((childSnapshot) => {
+          const val = childSnapshot.val();
+          // Logica per cambiare l'icona in base al feedback ricevuto I1=1 (garage chiuso) I2=1 (garage aperto)
+          if (val.cmd.includes("i2=1"))
+            garageStatusIcon.textContent = "lock_open_right";
+          else if (val.cmd.includes("i1=1"))
+            garageStatusIcon.textContent = "lock";
+          else garageStatusIcon.textContent = "question_mark";
+
+          statusIODiv.textContent =
+            "IO: " +
+            val.cmd +
+            " - " +
+            (val.timestamp
+              ? new Date(val.timestamp).toLocaleString("it-IT")
+              : "N/A");
+        });
+      });
 
       // Monitora lo stato di autenticazione
       onAuthStateChanged(auth, (user) => {
