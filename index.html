@@ -4,10 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>iCasa2</title>
-    <!-- Importa Google Material Icons -->
+    <!-- Import Material Symbols Outlined -->
     <link
-      href="https://fonts.googleapis.com/icon?family=Material+Icons"
       rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"
     />
     <style>
       body {
@@ -29,7 +29,7 @@
         cursor: pointer;
         width: 300px; /* Aumentata la larghezza per accogliere icone e testo */
       }
-      button .material-icons {
+      button .material-symbols-outlined {
         font-size: 40px; /* Icone decisamente più grandi */
       }
       #status {
@@ -112,7 +112,7 @@
         font-size: 14px;
         gap: 8px;
       }
-      .button-row button .material-icons {
+      .button-row button .material-symbols-outlined {
         font-size: 24px;
       }
     </style>
@@ -145,21 +145,23 @@
       <button id="btn1">Invia "Alfa"</button-->
 
       <button id="rtdbA">
-        <span class="material-icons">door_front</span> Portina (A)
+        <span class="material-symbols-outlined">door_front</span> Portina (A)
       </button>
       <button id="rtdbC">
-        <span class="material-icons">fence</span> Cancello (C)
+        <span class="material-symbols-outlined">fence</span> Cancello (C)
       </button>
       <button id="rtdbG">
-        <span class="material-icons">garage</span> Garage (G)
-        <span id="garageStatusIcon" class="material-icons">question_mark</span>
+        <span class="material-symbols-outlined">garage</span> Garage (G)
+        <span id="garageStatusIcon" class="material-symbols-outlined"
+          >question_mark</span
+        >
       </button>
       <div class="button-row">
         <button id="rtdbL_ON">
-          <span class="material-icons">lightbulb</span> LED ON (L)
+          <span class="material-symbols-outlined">lightbulb</span> LED ON (L)
         </button>
         <button id="rtdbL_OFF">
-          <span class="material-icons">lightbulb_outline</span> LED OFF
+          <span class="material-symbols-outlined">light_off</span> LED OFF
         </button>
       </div>
     </div>
@@ -257,7 +259,7 @@
         });
         statusArduino1Div.textContent =
           records.length > 0
-            ? records[0].cmd +
+            ? records[0].info +
               " - " +
               (records[0].timestamp
                 ? new Date(records[0].timestamp).toLocaleString("it-IT")
@@ -265,7 +267,7 @@
             : "";
         statusArduino2Div.textContent =
           records.length > 1
-            ? records[1].cmd +
+            ? records[1].info +
               " - " +
               (records[1].timestamp
                 ? new Date(records[1].timestamp).toLocaleString("it-IT")
@@ -279,15 +281,22 @@
         snapshot.forEach((childSnapshot) => {
           const val = childSnapshot.val();
           // Logica per cambiare l'icona in base al feedback ricevuto I1=1 (garage chiuso) I2=1 (garage aperto)
-          if (val.cmd.includes("i2=1"))
-            garageStatusIcon.textContent = "lock_open_right";
-          else if (val.cmd.includes("i1=1"))
-            garageStatusIcon.textContent = "lock";
-          else garageStatusIcon.textContent = "question_mark";
+          if (val.info.includes("i2=1")) {
+            // portone aperto
+            //garageStatusIcon.textContent = "lock_open_right";  // lucchetto bianco aperto
+            garageStatusIcon.textContent = "garage_door_open"; // portone garage sollevato
+          } else if (val.info.includes("i1=1")) {
+            // portone chiuso
+            //garageStatusIcon.textContent = "lock"; // lucchetto nero chiuso
+            garageStatusIcon.textContent = "garage_door"; // portone garasce abbassato
+          } else {
+            // non e' ne' chiuso se aperto, metot punto interrogativo
+            garageStatusIcon.textContent = "question_mark";
+          }
 
           statusIODiv.textContent =
             "IO: " +
-            val.cmd +
+            val.info +
             " - " +
             (val.timestamp
               ? new Date(val.timestamp).toLocaleString("it-IT")
