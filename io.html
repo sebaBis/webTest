@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Log iCasa commands</title>
+    <!-- Import Material Symbols Outlined -->
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"
+    />
+    <style>
+      body {
+        font-family: sans-serif;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      table {
+        width: 100%;
+        max-width: 800px;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+      th,
+      td {
+        border: 1px solid #ccc;
+        padding: 10px;
+        text-align: left;
+      }
+      th {
+        background-color: #2196f3;
+        color: white;
+      }
+      tr:nth-child(even) {
+        background-color: #f2f2f2;
+      }
+      #logStatus {
+        margin-bottom: 15px;
+        font-weight: bold;
+        color: #555;
+      }
+      .back-btn {
+        padding: 10px 20px;
+        background-color: #607d8b;
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+        margin: 10px 0;
+        font-size: 16px;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .back-btn:hover {
+        background-color: #455a64;
+      }
+    </style>
+  </head>
+  <body>
+    <a href="index.html" class="back-btn">
+      <span class="material-symbols-outlined">arrow_back</span> Torna alla Home
+    </a>
+    <h1>Cronologia iCasaIO</h1>
+    <div id="logStatus">Verifica autenticazione...</div>
+    <table id="logsTable">
+      <thead>
+        <tr>
+          <th>Data e Ora</th>
+          <th>IO</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <a href="index.html" class="back-btn" style="margin-top: 20px">
+      <span class="material-symbols-outlined">arrow_back</span> Torna alla Home
+    </a>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+      import {
+        getDatabase,
+        ref,
+        query,
+        limitToLast,
+        onValue,
+      } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+      import {
+        getAuth,
+        onAuthStateChanged,
+      } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyB9cCJW834afmKTw9iMEl76EOiBPQ4fWs0",
+        authDomain: "icasaserver.firebaseapp.com",
+        databaseURL: "https://icasaserver-default-rtdb.firebaseio.com",
+        projectId: "icasaserver",
+        storageBucket: "icasaserver.firebasestorage.app",
+        messagingSenderId: "317812359830",
+        appId: "1:317812359830:web:00f46b3b10ea4fa2fcb8b7",
+        measurementId: "G-NVTNVC2GRP",
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const rtdb = getDatabase(app);
+      const auth = getAuth(app);
+
+      const logsTableBody = document.querySelector("#logsTable tbody");
+      const logStatus = document.getElementById("logStatus");
+
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          logStatus.textContent = "Caricamento degli ultimi 100 log...";
+          const ioStatusQuery = query(ref(rtdb, "iCasaIO"), limitToLast(100));
+
+          onValue(ioStatusQuery, (snapshot) => {
+            logsTableBody.innerHTML = "";
+            const records = [];
+            snapshot.forEach((childSnapshot) => {
+              records.push(childSnapshot.val());
+            });
+
+            // Invertiamo l'ordine per avere i più recenti in alto
+            records.reverse().forEach((record) => {
+              const row = `<tr>
+                            <td>${record.timestamp ? new Date(record.timestamp).toLocaleString("it-IT") : "N/A"}</td>
+                            <td>${record.info || ""}</td>
+                        </tr>`;
+              logsTableBody.insertAdjacentHTML("beforeend", row);
+            });
+            logStatus.textContent = `Visualizzati ${records.length} record.`;
+          });
+        } else {
+          logStatus.textContent =
+            "Accesso negato. Effettua il login nella pagina principale.";
+        }
+      });
+    </script>
+  </body>
+</html>

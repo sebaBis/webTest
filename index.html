@@ -36,22 +36,6 @@
         margin-top: 5px;
         color: green;
       }
-      #statusCmd {
-        margin-top: 1px;
-        color: blue;
-      }
-      #statusArduino1 {
-        margin-top: 1px;
-        color: orange;
-      }
-      #statusArduino2 {
-        margin-top: 1px;
-        color: orange;
-      }
-      #statusIO {
-        margin-top: 1px;
-        color: green;
-      }
       #authArea {
         margin-bottom: 30px;
         padding: 15px;
@@ -167,10 +151,65 @@
     </div>
 
     <div id="status"></div>
-    <div id="statusCmd"></div>
-    <div id="statusArduino1"></div>
-    <div id="statusArduino2"></div>
-    <div id="statusIO"></div>
+    <button
+      id="viewCmdBtn"
+      style="
+        display: none;
+        width: auto;
+        padding: 10px 20px;
+        font-size: 16px;
+        margin-top: 10px;
+        background-color: #607d8b;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        align-items: center;
+        gap: 10px;
+      "
+    >
+      Mostra Log Cmd
+    </button>
+
+    <button
+      id="viewArduinoBtn"
+      style="
+        display: none;
+        width: auto;
+        padding: 10px 20px;
+        font-size: 16px;
+        margin-top: 10px;
+        background-color: #607d8b;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        align-items: center;
+        gap: 10px;
+        white-space: pre-line;
+      "
+    >
+      Mostra Log Arduino
+    </button>
+    <button
+      id="viewIoBtn"
+      style="
+        display: none;
+        width: auto;
+        padding: 10px 20px;
+        font-size: 16px;
+        margin-top: 10px;
+        background-color: #607d8b;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        align-items: center;
+        gap: 10px;
+      "
+    >
+      Mostra Log IO IO
+    </button>
 
     <script type="module">
       // Importa le funzioni necessarie dall'SDK di Firebase (v10+)
@@ -217,16 +256,15 @@
       const auth = getAuth(app);
 
       const statusDiv = document.getElementById("status");
-      const statusCmdDiv = document.getElementById("statusCmd");
-      const statusArduino1Div = document.getElementById("statusArduino1");
-      const statusArduino2Div = document.getElementById("statusArduino2");
-      const statusIODiv = document.getElementById("statusIO");
       const userDisplay = document.getElementById("userDisplay");
       const controlsArea = document.getElementById("controlsArea");
       const emailInput = document.getElementById("emailInput");
       const passwordInput = document.getElementById("passwordInput");
       const loginBtn = document.getElementById("loginBtn");
       const logoutBtn = document.getElementById("logoutBtn");
+      const viewCmdBtn = document.getElementById("viewCmdBtn");
+      const viewArduinoBtn = document.getElementById("viewArduinoBtn");
+      const viewIoBtn = document.getElementById("viewIoBtn");
       const garageStatusIcon = document.getElementById("garageStatusIcon");
 
       // Event listener for Realtime Database changes
@@ -237,7 +275,7 @@
           const val = childSnapshot.val();
           records.push(val);
         });
-        statusCmdDiv.textContent =
+        viewCmdBtn.textContent =
           records.length > 0
             ? records[0].cmd +
               " - " +
@@ -245,6 +283,8 @@
                 ? new Date(records[0].timestamp).toLocaleString("it-IT")
                 : "N/A")
             : "";
+        // all'arrivo dei dati ripristino il colore del pulsante
+        viewCmdBtn.style.backgroundColor = "#607d8b";
       });
 
       const arduinoStatusQuery = query(
@@ -257,22 +297,20 @@
           const val = childSnapshot.val();
           records.push(val);
         });
-        statusArduino1Div.textContent =
-          records.length > 0
-            ? records[0].info +
+        // Formattiamo le ultime 2 righe (invertendo l'ordine per avere la più recente in alto)
+        const lines = records
+          //.reverse()
+          .map(
+            (r) =>
+              (r.info || "") +
               " - " +
-              (records[0].timestamp
-                ? new Date(records[0].timestamp).toLocaleString("it-IT")
-                : "N/A")
-            : "";
-        statusArduino2Div.textContent =
-          records.length > 1
-            ? records[1].info +
-              " - " +
-              (records[1].timestamp
-                ? new Date(records[1].timestamp).toLocaleString("it-IT")
-                : "N/A")
-            : "";
+              (r.timestamp
+                ? new Date(r.timestamp).toLocaleString("it-IT")
+                : "N/A"),
+          );
+
+        viewArduinoBtn.textContent = lines.join("\n");
+        viewArduinoBtn.style.backgroundColor = "#607d8b";
       });
 
       // Monitoraggio input (stato garage)
@@ -294,13 +332,14 @@
             garageStatusIcon.textContent = "question_mark";
           }
 
-          statusIODiv.textContent =
+          viewIoBtn.textContent =
             "IO: " +
             val.info +
             " - " +
             (val.timestamp
               ? new Date(val.timestamp).toLocaleString("it-IT")
               : "N/A");
+          viewIoBtn.style.backgroundColor = "#607d8b";
         });
       });
 
@@ -312,6 +351,9 @@
           passwordInput.style.display = "none";
           loginBtn.style.display = "none";
           logoutBtn.style.display = "inline-block";
+          viewCmdBtn.style.display = "flex";
+          viewArduinoBtn.style.display = "flex";
+          viewIoBtn.style.display = "flex";
           controlsArea.classList.add("authenticated");
           console.log("Utente autenticato:", user.email || user.uid);
         } else {
@@ -320,10 +362,26 @@
           passwordInput.style.display = "block";
           loginBtn.style.display = "inline-block";
           logoutBtn.style.display = "none";
+          viewCmdBtn.style.display = "none";
+          viewArduinoBtn.style.display = "none";
+          viewIoBtn.style.display = "none";
           controlsArea.classList.remove("authenticated");
           statusDiv.textContent = "";
           console.log("Utente non autenticato");
         }
+      });
+
+      viewCmdBtn.addEventListener("click", () => {
+        window.location.href = "cmds.html";
+      });
+
+      // Listener per l'apertura della pagina dei log
+      viewArduinoBtn.addEventListener("click", () => {
+        window.location.href = "logs.html";
+      });
+
+      viewIoBtn.addEventListener("click", () => {
+        window.location.href = "io.html";
       });
 
       // Gestore del login
@@ -405,6 +463,10 @@
           return;
         }
         statusDiv.textContent = "Invio a Realtime DB...";
+        // metot tutti i pulsanti a colore grigio cosi da evidenziare quando arriveranno i dati
+        viewCmdBtn.style.backgroundColor = "lightgray";
+        viewArduinoBtn.style.backgroundColor = "lightgray";
+        viewIoBtn.style.backgroundColor = "lightgray";
         try {
           // Crea un nuovo riferimento con ID univoco (simile a addDoc)
           const messaggiRef = ref(rtdb, "iCasa");
